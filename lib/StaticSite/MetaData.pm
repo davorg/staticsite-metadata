@@ -4,8 +4,25 @@ use strict;
 use warnings;
 
 use Moo;
+use Role::Tiny ();
 use Carp;
 use JSON;
+use Types::Standard 'Enum';
+
+has format => (
+  is => 'ro',
+  isa => Enum[qw(json yaml)],
+  default => 'json',
+);
+
+sub BUILD {
+  my $self = shift;
+  my ($args) = @_;
+
+  Role::Tiny->apply_roles_to_object(
+    $self, 'StaticSite::MetaData::Role::' . uc $self->format
+  );
+}
 
 sub extract {
   my $self = shift;
@@ -15,13 +32,6 @@ sub extract {
 
   local $/ = '';
   my $metadata = (<$fh>)[0];
-}
-
-sub parse {
-  my $self = shift;
-  my ($text) = @_;
-
-  return JSON->new->decode($text);
 }
 
 sub get_metadata {
